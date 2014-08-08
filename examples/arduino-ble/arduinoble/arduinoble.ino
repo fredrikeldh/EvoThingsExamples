@@ -5,7 +5,6 @@
 #include <SPI.h>
 #include <boards.h>
 #include <RBL_nRF8001.h>
-#include <services.h>
 
 // Define input/output pins
 #define INPUT_PIN A0
