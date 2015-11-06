@@ -64,9 +64,35 @@ app.respondCanvas = function()
 	// Not used: canvas.attr('height', $(container).height() ) // Max height
 };
 
+function onConnect(context) {
+  // Once a connection has been made, make a subscription and send a message.
+  console.log("Client Connected");
+  console.log(context);
+}
+
 app.onDeviceReady = function()
 {
 	app.showInfo('Activate the SensorTag and tap Start.');
+
+	//var hostname = '192.168.1.100';
+	var hostname = 'backup.evothings.com';
+	var port = 1883;
+	var clientId = 'sensortag';
+	app.mqttClient = new Paho.MQTT.Client(hostname, port, clientId);
+  console.log("Client connecting...");
+	app.mqttClient.connect({onSuccess:onConnect,
+		invocationContext: {host : hostname, port: port, clientId: clientId}
+	});
+};
+
+app.publish = function(message) {
+	var topic = '/test';
+	var qos = 1;
+	console.info('Publishing Message: Topic: ', topic, '. QoS: ' + qos + '. Message: ', message);
+	message = new Paho.MQTT.Message(message);
+	message.destinationName = topic;
+	message.qos = qos;
+	app.mqttClient.send(message);
 };
 
 app.showInfo = function(info)
@@ -239,6 +265,8 @@ app.startAccelerometerNotification = function(device)
 			var dataArray = new Uint8Array(data);
 			var values = app.getAccelerometerValues(dataArray);
 			app.drawDiagram(values);
+
+			app.publish(JSON.stringify(values));
 		},
 		function(errorCode)
 		{
@@ -392,8 +420,8 @@ app.drawDiagram = function(values)
 	{
 		// Return Y coordinate for this value.
 		var diagramY =
-			((value * canvas.height) / 2)
-			+ (canvas.height / 2);
+			((value * (canvas.height-1)) / 2)
+			+ ((canvas.height-1) / 2);
 		return diagramY;
 	}
 
