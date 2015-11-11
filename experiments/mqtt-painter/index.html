@@ -41,8 +41,6 @@ div+ div
 
 	<script src="cordova.js"></script>
 	<script src="mqttws31.js"></script>
-	<script src="libs/evothings/evothings.js"></script>
-	<script src="libs/evothings/ui/ui.js"></script>
 	<script src="app.js"></script>
 
 </head>
@@ -60,7 +58,12 @@ div+ div
 
 	<h1>MQTT Painter</h1>
 
-	<p id="info">Not Connected</p>
+	<p>
+		<span  id="info">Not Connected</span>
+
+		<button id="send" onclick="app.onSend();">Send</button>
+		<button id="recieve" onclick="app.onRecieve();">Recieve</button>
+	</p>
 
 	<div class="dummy"></div>
 	<div class="canvas-container"><canvas id="canvas" style="margin: 0px;"></canvas></div>
