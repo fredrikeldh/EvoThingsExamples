@@ -23,7 +23,8 @@
 
   var client;
 
-  var iot_host = "play.messaging.internetofthings.ibmcloud.com";
+  //var iot_host = "play.messaging.internetofthings.ibmcloud.com";
+	var iot_host = "192.168.1.100";
   var iot_port = 1883;
   var iot_clientid = null;  // filled in later
   var iot_username = "use-token-auth";
@@ -108,18 +109,30 @@
     isConnected = true;
     changeConnectionStatusImage("images/connected.svg");
     document.getElementById("connection").innerHTML = "Connected";
+    console.log("subscribe "+topic);
+		client.subscribe(topic);
   }
+
+	function onMessageArrived(message) {
+		console.log("submsg: "+message.payloadString);
+		var msg = JSON.parse(message.payloadString);
+		$("#subscribed").html("Subscription timestamp: "+msg.d.ts);
+		/*for(var i in message) {
+			console.log(i);
+		}*/
+	}
 
   function onConnectFailure() {
     // The device failed to connect. Let's try again in one second.
     console.log("Could not connect to IoT Foundation! Trying again in one second.");
-    setTimeout(connectDevice(client), 1000);
+    //setTimeout(connectDevice(client), 1000);
   }
 
   function connectDevice(client) {
     changeConnectionStatusImage("images/connecting.svg");
     document.getElementById("connection").innerHTML = "Connecting";
     console.log("Connecting device to IoT Foundation...");
+		client.onMessageArrived = onMessageArrived;
     client.connect({
       onSuccess: onConnectSuccess,
       onFailure: onConnectFailure,
@@ -169,10 +182,12 @@
     // });
   }
 
-  $(document).ready(function() {
+  //$(document).ready(function() {
     // prompt the user for id
-    getId();
-  });
+	document.addEventListener(
+		'deviceready',
+		function() { getId(); },
+		false);
 
   function changeConnectionStatusImage(image) {
     document.getElementById("connectionImage").src = image;

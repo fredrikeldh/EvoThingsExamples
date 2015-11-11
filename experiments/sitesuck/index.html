@@ -17,16 +17,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>IoT Phone</title>
-  <link rel='stylesheet' href='css/device.css'/>
+	<title>IoT Phone</title>
+	<link rel='stylesheet' href='css/device.css'/>
 	<script>
 	// Redirect console to Evothings Workbench.
 	if (window.hyper) { console.log = hyper.log; }
 	</script>
-  <script src="../config/config.js"></script>
-  <script src="iotphone-metrics.js"></script>
-  <script src="js/ida_production.js" type="text/javascript">//</script>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+	<script src="cordova.js"></script>
+	<!--script type="text/javascript">console.log("Hello. chrome: "+chrome);</script-->
+	<script src="js/mqttws31.js"></script>
+	<script src="../config/config.js"></script>
+	<script src="iotphone-metrics.js"></script>
+	<script src="js/ida_production.js" type="text/javascript">//</script>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
 <body>
 	<div class="outer-main">
@@ -76,7 +79,6 @@
 	</div>
 	<!-- Please do not change the order of these links as some depend on each other -->
 	<script type="text/javascript" src="js/jquery.min.js"></script>
-	<script type="text/javascript" src="js/mqttws31.js"></script>
 	<script type="text/javascript" src="js/device.js"></script>
 </body>
 </html>

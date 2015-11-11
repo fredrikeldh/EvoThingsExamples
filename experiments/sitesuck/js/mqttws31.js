@@ -1459,6 +1459,7 @@ Paho.MQTT = (function (global) {
 			delete this.socket;
 */
 			chrome.sockets.tcp.close(this.socket);
+			this.socket = false;
 		}
 
 		if (this.connectOptions.uris && this.hostIndex < this.connectOptions.uris.length-1) {
