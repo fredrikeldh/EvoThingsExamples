@@ -8,6 +8,7 @@ app.connected = false;
 app.sending = false;
 app.recieveing = true;
 app.ax = app.ay = app.az = 0;
+app.waitingForFrame = false;
 
 app.initialize = function() {
 	document.addEventListener(
@@ -19,7 +20,7 @@ app.initialize = function() {
 app.onReady = function() {
 	app.setupCanvas();
 	app.setupAccelerometer();
-	//app.setupConnection();
+	app.setupConnection();
 }
 
 var scene, camera, renderer;
@@ -48,8 +49,6 @@ function init() {
 }
 
 function animate() {
-	requestAnimationFrame( animate );
-
 	if(true) {
 	var g = Math.sqrt(app.ax * app.ax + app.ay * app.ay + app.az * app.az);
 
@@ -66,6 +65,7 @@ function animate() {
 	}
 
 	renderer.render( scene, camera );
+	app.waitingForFrame = false;
 }
 
 app.setupCanvas = function() {
@@ -84,9 +84,16 @@ app.setupCanvas = function() {
 
 app.setupAccelerometer = function() {
 	window.ondevicemotion = function(event) {
-		app.ax = parseFloat(event.accelerationIncludingGravity.x || 0);
-		app.ay = parseFloat(event.accelerationIncludingGravity.y || 0);
-		app.az = parseFloat(event.accelerationIncludingGravity.z || 0);
+		if(app.sending) {
+			app.ax = parseFloat(event.accelerationIncludingGravity.x || 0);
+			app.ay = parseFloat(event.accelerationIncludingGravity.y || 0);
+			app.az = parseFloat(event.accelerationIncludingGravity.z || 0);
+			if(!app.waitingForFrame) {
+				app.waitingForFrame = true;
+				requestAnimationFrame(animate);
+				app.publish(JSON.stringify({x:app.ax, y:app.ay, z:app.az}));
+			}
+		}
 	}
 }
 
@@ -125,6 +132,13 @@ app.unsubscribe = function() {
 app.onMessageArrived = function(message) {
   //console.log("onMessageArrived:"+message.payloadString);
 	var o = JSON.parse(message.payloadString);
+	app.ax = o.x;
+	app.ay = o.y;
+	app.az = o.z;
+	if(!app.waitingForFrame) {
+		app.waitingForFrame = true;
+		requestAnimationFrame(animate);
+	}
 }
 
 app.onConnect = function(context) {
