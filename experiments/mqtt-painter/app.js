@@ -94,8 +94,10 @@ app.onMessageArrived = function(message) {
 app.onConnect = function(context) {
 	app.status("Connected!");
 	app.connected = true;
-	if(app.recieveing)
+	if(app.recieveing) {
+		app.status("Recieveing...");
 		app.subscribe();
+	}
 }
 
 app.onSend = function() {
