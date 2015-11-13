@@ -993,7 +993,7 @@ Paho.MQTT = (function (global) {
 			});
 
 			var uriParts = wsurl.split(":");
-			var host = uriParts[0], port = uriParts[1] || 1883;
+			var host = uriParts[0], port = parseInt(uriParts[1]) || 1883;
 			console.log("connect("+host+", "+port+")");
 			chrome.sockets.tcp.connect(self.socket, host, port, function(res) {
 				if(res >= 0) {
