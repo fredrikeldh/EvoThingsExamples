@@ -243,7 +243,31 @@ def buildEsp8266
 	copyJQuery(destPath)
 end
 
-###### Copy helpers ######
+def buildMqtt3js
+	destPath = 'experiments/mqtt-3js'
+	copyCommon(destPath)
+	copyMQTT(destPath)
+end
+
+def buildMqttPainter
+	destPath = 'experiments/mqtt-painter'
+	copyCommon(destPath)
+	copyMQTT(destPath)
+end
+
+def buildMqttPaintHistory
+	destPath = 'experiments/mqtt-paint-history'
+	copyCommon(destPath)
+	copyMQTT(destPath)
+end
+
+def buildSitesuck
+	destPath = 'experiments/sitesuck'
+	copyCommon(destPath)
+	copyMQTT(destPath)
+end
+
+################################# Copy helpers #################################
 
 ### CSS/JS ###
 
@@ -309,6 +333,10 @@ def copyUtil(destPath)
 	copyDir('resources/libs/evothings/util', destPath + '/libs/evothings')
 end
 
+def copyMQTT(destPath)
+	copyDir('resources/libs/mqtt/mqttws31.js', destPath + '/libs/')
+end
+
 def copyWhereIsTheArduinoCode(destPath)
 	copyFile(
 		'resources/txt/where-is-the-arduino-code.txt',
@@ -371,6 +399,10 @@ def build
 	buildMediaTekLinkIt
 	buildMediaTekLinkItConnect
 	buildEsp8266
+	buildMqtt3js
+	buildMqttPainter
+	buildMqttPaintHistory
+	buildSitesuck
 end
 
 build
