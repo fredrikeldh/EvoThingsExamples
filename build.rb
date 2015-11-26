@@ -267,6 +267,13 @@ def buildSitesuck
 	copyMQTT(destPath)
 end
 
+def buildAutomax
+	destPath = 'experiments/Automax'
+	copyCommon(destPath)
+	copyJQuery(destPath)
+	copyEasyBLE(destPath)
+end
+
 ################################# Copy helpers #################################
 
 ### CSS/JS ###
@@ -403,6 +410,7 @@ def build
 	buildMqttPainter
 	buildMqttPaintHistory
 	buildSitesuck
+	buildAutomax
 end
 
 build
