@@ -274,6 +274,12 @@ def buildAutomax
 	copyEasyBLE(destPath)
 end
 
+def buildAutomaxSensors
+	destPath = 'experiments/Automax-sensors'
+	copyCommon(destPath)
+	copyEasyBLE(destPath)
+end
+
 ################################# Copy helpers #################################
 
 ### CSS/JS ###
@@ -411,6 +417,7 @@ def build
 	buildMqttPaintHistory
 	buildSitesuck
 	buildAutomax
+	buildAutomaxSensors
 end
 
 build
