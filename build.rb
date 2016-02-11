@@ -280,6 +280,13 @@ def buildAutomaxSensors
 	copyEasyBLE(destPath)
 end
 
+def buildMicrobitDemo
+	destPath = 'experiments/microbit-demo'
+	copyCommon(destPath)
+	copyJQuery(destPath)
+	copyEasyBLE(destPath)
+end
+
 ################################# Copy helpers #################################
 
 ### CSS/JS ###
@@ -418,6 +425,7 @@ def build
 	buildSitesuck
 	buildAutomax
 	buildAutomaxSensors
+	buildMicrobitDemo
 end
 
 build
