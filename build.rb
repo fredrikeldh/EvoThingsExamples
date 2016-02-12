@@ -293,6 +293,12 @@ def buildMicrobitLED
 	copyEasyBLE(destPath)
 end
 
+def buildMicrobitSensors
+	destPath = 'experiments/microbit-sensors'
+	copyCommon(destPath)
+	copyEasyBLE(destPath)
+end
+
 ################################# Copy helpers #################################
 
 ### CSS/JS ###
@@ -433,6 +439,7 @@ def build
 	buildAutomaxSensors
 	buildMicrobitDemo
 	buildMicrobitLED
+	buildMicrobitSensors
 end
 
 build
