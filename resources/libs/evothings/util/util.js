@@ -187,7 +187,7 @@ evothings.util = {};
 	 * @public
 	 */
 	evothings.util.toHexString = function(i, byteCount) {
-		var string = (new Number(i)).toString(16);
+		var string = (new Number(i)).toString(16).toLowerCase();
 		while(string.length < byteCount*2) {
 			string = '0'+string;
 		}

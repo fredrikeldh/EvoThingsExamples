@@ -286,7 +286,7 @@
 			// Convert 16-byte Uint8Array to RFC-4122-formatted UUID.
 			function arrayToUUID(array, offset)
 			{
-				var k=0;
+				var k=15;
 				var string = '';
 				var UUID_format = [4, 2, 2, 2, 6];
 				for (var l=0; l<UUID_format.length; l++)
@@ -295,7 +295,7 @@
 					{
 						string += '-';
 					}
-					for (var j=0; j<UUID_format[l]; j++, k++)
+					for (var j=0; j<UUID_format[l]; j++, k--)
 					{
 						string += evothings.util.toHexString(array[offset+k], 1);
 					}
