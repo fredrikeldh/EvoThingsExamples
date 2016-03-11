@@ -299,6 +299,13 @@ def buildMicrobitSensors
 	copyEasyBLE(destPath)
 end
 
+def buildArduino101LEDOnOff
+	destPath = 'experiments/arduino101-led-onoff'
+	copyCommon(destPath)
+	copyJQuery(destPath)
+	copyArduinoBLE(destPath)
+end
+
 ################################# Copy helpers #################################
 
 ### CSS/JS ###
@@ -440,6 +447,7 @@ def build
 	buildMicrobitDemo
 	buildMicrobitLED
 	buildMicrobitSensors
+	buildArduino101LEDOnOff
 end
 
 build
