@@ -176,23 +176,13 @@ app.connectToDevice = function(device)
 
 app.readServices = function(device)
 {
+	app.device = device;
 	evothings.ble.readAllServiceData(device.handle,
-		/*[
-			UUID_SERVICE_GENERIC_ACCESS,
-			UUID_SERVICE_DEVICE_INFORMATION,
-			UUID_SERVICE_BATTERY,
-			//UUID_SERVICE_AUTOMATION_IO,
-			//UUID_SERVICE_CSC,
-			UUID_SERVICE_ENVIRONMENT_SENSING,
-			UUID_SERVICE_ACCELERATION_ORIENTATION,
-			UUID_SERVICE_AMBIENT_LIGHT,
-		],
-		app.startNotifications,*/
 		function(services)
 		{
 			device.services = services;
 			app.readDeviceInfo(device);
-			//app.startNotifications(device);
+			app.startNotifications(device);
 		},
 		function(errorCode)
 		{
@@ -246,20 +236,48 @@ app.startNotifications = function(device)
 {
 	app.showInfo('Status: Starting notifications...');
 
-	// Set notifications to ON.
-	app.writeNotificationDescriptor(device, UUID_CHARACTERISTIC_BATTERY_LEVEL);
-	app.writeNotificationDescriptor(device, UUID_CHARACTERISTIC_DIGITAL_INPUT);
-	app.writeNotificationDescriptor(device, UUID_CHARACTERISTIC_ACCELERATION);
-	app.writeNotificationDescriptor(device, UUID_CHARACTERISTIC_ORIENTATION);
-	UUID_CHARACTERISTIC_TEMPERATURE
-	UUID_CHARACTERISTIC_HUMIDITY
-	UUID_CHARACTERISTIC_UV_INDEX
-	UUID_CHARACTERISTIC_AMBIENT_LIGHT
+	app.notify(device, UUID_SERVICE_BATTERY, UUID_CHARACTERISTIC_BATTERY_LEVEL, 'BatteryCharge', uint8PercentageFormat);
+/*
+	// Notification is not supported on these sensors. You must poll/read.
+	app.notify(device, UUID_SERVICE_ENVIRONMENT_SENSING, UUID_CHARACTERISTIC_HUMIDITY, 'Humidity', uint16Format);
+	app.notify(device, UUID_SERVICE_ENVIRONMENT_SENSING, UUID_CHARACTERISTIC_TEMPERATURE, 'Temperature', sint16Format);
+	app.notify(device, UUID_SERVICE_ENVIRONMENT_SENSING, UUID_CHARACTERISTIC_UV_INDEX, 'UVIndex', uint8Format);
+	app.notify(device, UUID_SERVICE_AMBIENT_LIGHT, UUID_CHARACTERISTIC_AMBIENT_LIGHT, 'AmbientLight', uint32Format);
+*/
+	app.notify(device, UUID_SERVICE_ACCELERATION_ORIENTATION, UUID_CHARACTERISTIC_ACCELERATION, 'Acceleration', sint16Axis3Format);
+	app.notify(device, UUID_SERVICE_ACCELERATION_ORIENTATION, UUID_CHARACTERISTIC_ORIENTATION, 'Orientation', sint16Axis3Format);
 
-	// Set sensor period to 160 ms.
-	var periodDataBuffer = new ArrayBuffer(2);
-	new DataView(periodDataBuffer).setUint16(0, 160, true);
+	app.setupAutomationService(device);
+}
 
+var sint16Format = function(data)
+{
+	var d = new Int16Array(data);
+	return d[0];
+}
+
+var uint16Format = function(data)
+{
+	var d = new Uint16Array(data);
+	return d[0];
+}
+
+var uint32Format = function(data)
+{
+	var d = new Uint32Array(data);
+	return d[0];
+}
+
+var uint8Format = function(data)
+{
+	var d = new Uint8Array(data);
+	return d[0];
+}
+
+var sint16Axis3Format = function(data)
+{
+	var d = new Int16Array(data);
+	return 'x: '+d[0]+' y:'+d[1]+' z:'+d[2];
 }
 
 app.readDeviceInfo = function(device)
@@ -274,6 +292,95 @@ app.readDeviceInfo = function(device)
 	app.readCharacteristic(device, UUID_SERVICE_DEVICE_INFORMATION, UUID_CHARACTERISTIC_SYSTEM_ID, 'SystemID');
 
 	app.readCharacteristic(device, UUID_SERVICE_BATTERY, UUID_CHARACTERISTIC_BATTERY_LEVEL, 'BatteryCharge', uint8PercentageFormat);
+}
+
+//var humidityFormat
+
+app.notify = function(device, serviceUUID, characteristicUUID, spanID, format)
+{
+	// Find handle
+	var cHandle;
+	for(let s of device.services) {
+		if(s.uuid == serviceUUID) {
+			for(let c of s.characteristics) {
+				if(c.uuid == characteristicUUID) {
+					cHandle = c.handle;
+				}
+			}
+		}
+	}
+	// Read data
+	if(!cHandle) {
+		app.value(spanID, "N/A");
+		return;
+	}
+	evothings.ble.enableNotification(device.handle, cHandle,
+	function(data)
+	{
+		var str = format(data);
+		//console.log(spanID+': '+str);
+		app.value(spanID, str);
+	},
+	function(errorCode)
+	{
+		console.log('Error: enableNotification: ' + errorCode + '.');
+	});
+}
+
+app.setupAutomationService = function(device)
+{
+	// Find handles
+	for(let s of device.services) {
+		if(s.uuid == UUID_SERVICE_AUTOMATION_IO) {
+			for(let c of s.characteristics) {
+				if(c.uuid == UUID_CHARACTERISTIC_DIGITAL) {
+					if((c.properties & evothings.ble.property.PROPERTY_NOTIFY) != 0) {
+						device.inputHandle = c.handle;
+					}
+					if((c.properties & evothings.ble.property.PROPERTY_WRITE) != 0) {
+						// TODO: use this for LED control.
+						device.outputHandle = c.handle;
+					}
+				}
+			}
+		}
+	}
+
+	// If handle was not found, mark the field as Not Available.
+	if(!device.inputHandle) {
+		app.value('SW-0', "N/A");
+		app.value('SW-1', "N/A");
+		return;
+	}
+
+	// Start notifications
+	evothings.ble.enableNotification(device.handle, device.inputHandle,
+	function(data)
+	{
+		var v = new Uint8Array(data)[0];
+		console.log("notified: "+v);
+		app.value('SW-0', ((v & 0x1) == 0) ? 'OFF' : 'ON');
+		app.value('SW-1', ((v & 0x4) == 0) ? 'OFF' : 'ON');
+	},
+	function(errorCode)
+	{
+		console.log('Error: enableNotification: ' + errorCode + '.');
+	});
+
+	// Read data
+	console.log("read buttons...");
+	evothings.ble.readCharacteristic(device.handle, device.inputHandle,
+	function(data)
+	{
+		var v = new Uint8Array(data)[0];
+		console.log("buttons: "+v);
+		app.value('SW-0', ((v & 0x1) == 0) ? 'OFF' : 'ON');
+		app.value('SW-1', ((v & 0x4) == 0) ? 'OFF' : 'ON');
+	},
+	function(errorCode)
+	{
+		console.log('Error: readCharacteristic: ' + errorCode + '.');
+	});
 }
 
 // http://www.onicos.com/staff/iz/amuse/javascript/expert/utf.txt
