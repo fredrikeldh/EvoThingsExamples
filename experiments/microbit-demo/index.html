@@ -7,7 +7,7 @@
 	<meta name="viewport" content="width=device-width, user-scalable=no
 		initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
 
-	<title>micro:bit Accelerometer Demo</title>
+	<title>micro:bit Accelerometer</title>
 
 	<style>
 		@import 'ui/css/evothings-app.css';
@@ -51,25 +51,32 @@
 		</menu>
 	</header>
 
-	<h1>micro:bit Accelerometer Demo</h1>
+	<h1>micro:bit Accelerometer</h1>
 
 	<p id="info">Not Connected</p>
 
 	<button onclick="app.onStartButton()" class="green">START</button>
 	<button onclick="app.onStopButton()" class="red">STOP</button>
 
-	<canvas id="canvas" width="300" height="150"></canvas>
+	<div><canvas id="canvas" width="300" height="150" /></div>
 
-	<section id='information'>
+	<p>
+	<a href="#" onclick="cordova.InAppBrowser.open('https://evothings.com/evothings-and-the-bbc-microbit/', '_system');">Make your own micro:bit app.</a>
+	</p>
+
+	<section id="information">
 
 		<h2>Info</h2>
 
 		<p>
-			This app charts accelerometer data from the BBC micro:bit.
+			This app charts accelerometer data from the <a href="#" onclick="cordova.InAppBrowser.open('https://www.microbit.co.uk/', '_system');">BBC micro:bit</a>.
 			Note that you must run this app in the Evothings
 			Client app, or build a Cordova app with the plugin
 			com.evothings.ble. A device with support for Bluetooth 4.0 and
 			Android 4.3+ or iOS 7+ is required.
+		</p>
+		<p>
+		&ldquo;BBC&rdquo; and &ldquo;micro:bit&rdquo; are trade marks of the BBC.
 		</p>
 
 		<h2>How to use</h2>

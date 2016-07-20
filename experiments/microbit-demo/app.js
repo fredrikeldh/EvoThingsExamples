@@ -1,4 +1,4 @@
-// JavaScript code for the micro:bit Demo app.
+// JavaScript code for the micro:bit Accelerometer app.
 
 /**
  * Object that holds application data and functions.
@@ -87,6 +87,7 @@ app.onStopButton = function()
 	app.stopConnectTimer();
 	evothings.easyble.stopScan();
 	evothings.easyble.closeConnectedDevices();
+	app.clearTimeout();
 	app.showInfo('Status: Stopped.');
 };
 
@@ -211,12 +212,22 @@ app.startAccelerometerNotification = function(device)
 			//console.log(evothings.util.typedArrayToHexString(data));
 			var values = app.getAccelerometerValues(dataArray);
 			app.drawDiagram(values);
+			app.clearTimeout();
+			app.timeout = window.setTimeout(app.drawEmptyFrame, 50);
 		},
 		function(errorCode)
 		{
 			console.log('Error: enableNotification: ' + errorCode + '.');
 		});
 };
+
+app.clearTimeout = function()
+{
+	if(app.timeout) {
+		window.clearTimeout(app.timeout);
+		app.timeout = false;
+	}
+}
 
 /**
  * Calculate accelerometer values from raw data for micro:bit.
@@ -238,6 +249,17 @@ app.getAccelerometerValues = function(data)
 	var ay = rawY / divisor;
 	var az = rawZ / divisor;
 
+	// compare to previous values.
+	if(app.rx == rawX && app.ry == rawY && app.rz == rawZ) {
+		app.dupeCount += 1;
+		console.log("Dupe " + app.dupeCount);
+	} else {
+		app.dupeCount = 0;
+	}
+	app.rx = rawX;
+	app.ry = rawY;
+	app.rz = rawZ;
+
 	// log raw values every now and then
 	var now = new Date().getTime();	// current time in milliseconds since 1970.
 	if(!app.lastLog || now > app.lastLog + 100) {
@@ -249,6 +271,12 @@ app.getAccelerometerValues = function(data)
 	// Return result.
 	return { x: ax, y: ay, z: az };
 };
+
+app.drawEmptyFrame = function()
+{
+	app.drawDiagram(false);
+	app.timeout = window.setTimeout(app.drawEmptyFrame, 50);
+}
 
 /**
  * Plot diagram of sensor values.
@@ -283,14 +311,17 @@ app.drawDiagram = function(values)
 	{
 		context.strokeStyle = color;
 		context.beginPath();
-		var lastDiagramY = calcDiagramY(
-			app.dataPoints[app.dataPoints.length-1][axis]);
-		context.moveTo(0, lastDiagramY);
+		var y = calcDiagramY(app.dataPoints[app.dataPoints.length-1][axis]);
+		context.moveTo(0, y);
 		var x = 1;
 		for (var i = app.dataPoints.length - 2; i >= 0; i--)
 		{
-			var y = calcDiagramY(app.dataPoints[i][axis]);
-			context.lineTo(x, y);
+			if(app.dataPoints[i]) {
+				y = calcDiagramY(app.dataPoints[i][axis]);
+				context.lineTo(x, y);
+			} else {
+				context.moveTo(x, y);
+			}
 			x++;
 		}
 		context.stroke();
