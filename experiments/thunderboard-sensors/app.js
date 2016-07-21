@@ -102,6 +102,7 @@ app.onStopButton = function()
 	evothings.ble.stopScan();
 	if(app.device && app.device.handle)
 		evothings.ble.close(app.device.handle);
+	app.device = false;
 	app.showInfo('Status: Stopped.');
 }
 
@@ -237,13 +238,13 @@ app.startNotifications = function(device)
 	app.showInfo('Status: Starting notifications...');
 
 	app.notify(device, UUID_SERVICE_BATTERY, UUID_CHARACTERISTIC_BATTERY_LEVEL, 'BatteryCharge', uint8PercentageFormat);
-/*
+
 	// Notification is not supported on these sensors. You must poll/read.
-	app.notify(device, UUID_SERVICE_ENVIRONMENT_SENSING, UUID_CHARACTERISTIC_HUMIDITY, 'Humidity', uint16Format);
-	app.notify(device, UUID_SERVICE_ENVIRONMENT_SENSING, UUID_CHARACTERISTIC_TEMPERATURE, 'Temperature', sint16Format);
-	app.notify(device, UUID_SERVICE_ENVIRONMENT_SENSING, UUID_CHARACTERISTIC_UV_INDEX, 'UVIndex', uint8Format);
-	app.notify(device, UUID_SERVICE_AMBIENT_LIGHT, UUID_CHARACTERISTIC_AMBIENT_LIGHT, 'AmbientLight', uint32Format);
-*/
+	app.startPolling(device, UUID_SERVICE_ENVIRONMENT_SENSING, UUID_CHARACTERISTIC_HUMIDITY, 'Humidity', uint16Format);
+	app.startPolling(device, UUID_SERVICE_ENVIRONMENT_SENSING, UUID_CHARACTERISTIC_TEMPERATURE, 'Temperature', sint16Format);
+	app.startPolling(device, UUID_SERVICE_ENVIRONMENT_SENSING, UUID_CHARACTERISTIC_UV_INDEX, 'UVIndex', uint8Format);
+	app.startPolling(device, UUID_SERVICE_AMBIENT_LIGHT, UUID_CHARACTERISTIC_AMBIENT_LIGHT, 'AmbientLight', uint32Format);
+
 	app.notify(device, UUID_SERVICE_ACCELERATION_ORIENTATION, UUID_CHARACTERISTIC_ACCELERATION, 'Acceleration', sint16Axis3Format);
 	app.notify(device, UUID_SERVICE_ACCELERATION_ORIENTATION, UUID_CHARACTERISTIC_ORIENTATION, 'Orientation', sint16Axis3Format);
 
@@ -294,9 +295,7 @@ app.readDeviceInfo = function(device)
 	app.readCharacteristic(device, UUID_SERVICE_BATTERY, UUID_CHARACTERISTIC_BATTERY_LEVEL, 'BatteryCharge', uint8PercentageFormat);
 }
 
-//var humidityFormat
-
-app.notify = function(device, serviceUUID, characteristicUUID, spanID, format)
+app.findHandle = function(device, serviceUUID, characteristicUUID, spanID)
 {
 	// Find handle
 	var cHandle;
@@ -312,8 +311,14 @@ app.notify = function(device, serviceUUID, characteristicUUID, spanID, format)
 	// Read data
 	if(!cHandle) {
 		app.value(spanID, "N/A");
-		return;
 	}
+	return cHandle;
+}
+
+app.notify = function(device, serviceUUID, characteristicUUID, spanID, format)
+{
+	var cHandle = app.findHandle(device, serviceUUID, characteristicUUID, spanID);
+	if(!cHandle) return;
 	evothings.ble.enableNotification(device.handle, cHandle,
 	function(data)
 	{
@@ -324,6 +329,32 @@ app.notify = function(device, serviceUUID, characteristicUUID, spanID, format)
 	function(errorCode)
 	{
 		console.log('Error: enableNotification: ' + errorCode + '.');
+	});
+}
+
+app.startPolling = function(device, serviceUUID, characteristicUUID, spanID, format)
+{
+	var cHandle = app.findHandle(device, serviceUUID, characteristicUUID, spanID);
+	if(!cHandle) return;
+	app.continuePolling(device, cHandle, spanID, format);
+}
+
+app.continuePolling = function(device, cHandle, spanID, format)
+{
+	// Stop polling if the device is disconnected.
+	if(!app.device) return;
+
+	evothings.ble.readCharacteristic(device.handle, cHandle,
+	function(data)
+	{
+		var str = format(data);
+		//console.log(spanID+': '+str);
+		app.value(spanID, str);
+		window.setTimeout(app.continuePolling, 1000, device, cHandle, spanID, format);
+	},
+	function(errorCode)
+	{
+		console.log('Error: readCharacteristic: ' + errorCode + '.');
 	});
 }
 
