@@ -50,9 +50,15 @@
 		<strong>Status:</strong> <span id="Status">Press Connect to find the nearest Thunderboard</span>
 	</p>
 
-	<!--p>
-		<button onclick="toggleSensors()" class="charcoal">Toggle sensors</button>
-	</p-->
+	<p>
+		<button onclick="app.onLedButton(0x04)" class="green">
+			LED-G
+		</button>
+
+		<button onclick="app.onLedButton(0x01)" class="blue">
+			LED-B
+		</button>
+	</p>
 
 	<h2>Movement:</h2>
 	<p>

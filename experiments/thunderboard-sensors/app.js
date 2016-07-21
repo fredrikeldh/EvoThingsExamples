@@ -358,6 +358,33 @@ app.continuePolling = function(device, cHandle, spanID, format)
 	});
 }
 
+// Toggle an LED on the Thunderboard.
+app.onLedButton = function(flag)
+{
+	// If we can't access any button, don't try.
+	if(!app.device || !app.device.outputHandle) return;
+
+	// Assume LEDs are off when we connect to the Thunderboard.
+	if(!app.device.ledState) app.device.ledState = 0x00;
+
+	// If the flag was off, turn it on.
+	// Otherwise, turn it off.
+	if((app.device.ledState & flag) == 0)
+		app.device.ledState = app.device.ledState | flag;
+	else
+		app.device.ledState = app.device.ledState & (~flag);
+
+	evothings.ble.writeCharacteristic(app.device.handle, app.device.outputHandle, new Uint8Array([app.device.ledState]),
+	function()
+	{
+		//console.log("writeCharacteristic success");
+	},
+	function(errorCode)
+	{
+		console.log('Error: writeCharacteristic: ' + errorCode + '.');
+	});
+}
+
 app.setupAutomationService = function(device)
 {
 	// Find handles
