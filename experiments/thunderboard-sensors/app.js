@@ -84,6 +84,10 @@ app.onDeviceReady = function()
 
 app.showInfo = function(info)
 {
+	// Avoid flickering in case of rewriting the same info many times.
+	if(app.oldInfo == info) return;
+	app.oldInfo = info;
+
 	document.getElementById('Status').innerHTML = info;
 }
 
@@ -103,6 +107,7 @@ app.onStopButton = function()
 	if(app.device && app.device.handle)
 		evothings.ble.close(app.device.handle);
 	app.device = false;
+	app.connecting = false;
 	app.showInfo('Status: Stopped.');
 }
 
@@ -130,8 +135,9 @@ app.startScan = function()
 		function(device)
 		{
 			// Connect if we have found an Thunderboard.
-			if (app.deviceIsThunderboard(device))
+			if (app.deviceIsThunderboard(device) && !app.connecting)
 			{
+				app.connecting = true;
 				app.showInfo('Status: Device found: ' + device.name + '.');
 				evothings.ble.stopScan();
 				app.connectToDevice(device);
@@ -147,7 +153,7 @@ app.startScan = function()
 app.deviceIsThunderboard = function(device)
 {
 	app.ensureAdvertisementData(device)
-	console.log('device name: "'+device.name+'" data: '+JSON.stringify(device.advertisementData));
+	//console.log('device name: "'+device.name+'" data: '+JSON.stringify(device.advertisementData));
 	return (device != null) &&
 		(device.name != null) &&
 		((device.name.indexOf('Thunder React') > -1));
@@ -162,9 +168,13 @@ app.connectToDevice = function(device)
 	evothings.ble.connect(device.address,
 		function(info)
 		{
-			device.handle = info.deviceHandle;
-			app.showInfo('Status: Connected - reading Thunderboard services...');
-			app.readServices(device);
+			if(info.state == evothings.ble.connectionState.STATE_CONNECTED) {
+				device.handle = info.deviceHandle;
+				app.showInfo('Status: Connected - reading Thunderboard services...');
+				app.readServices(device);
+			} else {
+				app.showInfo('Status: '+evothings.ble.connectionState[info.state]);
+			}
 		},
 		function(errorCode)
 		{
@@ -181,6 +191,7 @@ app.readServices = function(device)
 	evothings.ble.readAllServiceData(device.handle,
 		function(services)
 		{
+			console.log("Services read.");
 			device.services = services;
 			app.readDeviceInfo(device);
 			app.startNotifications(device);
@@ -299,9 +310,9 @@ app.findHandle = function(device, serviceUUID, characteristicUUID, spanID)
 {
 	// Find handle
 	var cHandle;
-	for(let s of device.services) {
+	for(s of device.services) {
 		if(s.uuid == serviceUUID) {
-			for(let c of s.characteristics) {
+			for(c of s.characteristics) {
 				if(c.uuid == characteristicUUID) {
 					cHandle = c.handle;
 				}
@@ -325,6 +336,7 @@ app.notify = function(device, serviceUUID, characteristicUUID, spanID, format)
 		var str = format(data);
 		//console.log(spanID+': '+str);
 		app.value(spanID, str);
+		app.showInfo("Status: Active");
 	},
 	function(errorCode)
 	{
@@ -388,9 +400,9 @@ app.onLedButton = function(flag)
 app.setupAutomationService = function(device)
 {
 	// Find handles
-	for(let s of device.services) {
+	for(s of device.services) {
 		if(s.uuid == UUID_SERVICE_AUTOMATION_IO) {
-			for(let c of s.characteristics) {
+			for(c of s.characteristics) {
 				if(c.uuid == UUID_CHARACTERISTIC_DIGITAL) {
 					if((c.properties & evothings.ble.property.PROPERTY_NOTIFY) != 0) {
 						device.inputHandle = c.handle;
@@ -411,29 +423,28 @@ app.setupAutomationService = function(device)
 		return;
 	}
 
-	// Start notifications
-	evothings.ble.enableNotification(device.handle, device.inputHandle,
-	function(data)
-	{
-		var v = new Uint8Array(data)[0];
-		console.log("notified: "+v);
-		app.value('SW-0', ((v & 0x1) == 0) ? 'OFF' : 'ON');
-		app.value('SW-1', ((v & 0x4) == 0) ? 'OFF' : 'ON');
-	},
-	function(errorCode)
-	{
-		console.log('Error: enableNotification: ' + errorCode + '.');
-	});
-
 	// Read data
-	console.log("read buttons...");
 	evothings.ble.readCharacteristic(device.handle, device.inputHandle,
 	function(data)
 	{
 		var v = new Uint8Array(data)[0];
-		console.log("buttons: "+v);
+		//console.log("buttons: "+v);
 		app.value('SW-0', ((v & 0x1) == 0) ? 'OFF' : 'ON');
 		app.value('SW-1', ((v & 0x4) == 0) ? 'OFF' : 'ON');
+
+		// Start notifications (must on iOS be done *after* readCharacteristic on the same handle).
+		evothings.ble.enableNotification(device.handle, device.inputHandle,
+		function(data)
+		{
+			var v = new Uint8Array(data)[0];
+			//console.log("notified: "+v);
+			app.value('SW-0', ((v & 0x1) == 0) ? 'OFF' : 'ON');
+			app.value('SW-1', ((v & 0x4) == 0) ? 'OFF' : 'ON');
+		},
+		function(errorCode)
+		{
+			console.log('Error: enableNotification: ' + errorCode + '.');
+		});
 	},
 	function(errorCode)
 	{
@@ -513,9 +524,9 @@ app.readCharacteristic = function(device, serviceUUID, characteristicUUID, spanI
 	format = format || utf8StringFormat;
 	// Find handle
 	var cHandle;
-	for(let s of device.services) {
+	for(s of device.services) {
 		if(s.uuid == serviceUUID) {
-			for(let c of s.characteristics) {
+			for(c of s.characteristics) {
 				if(c.uuid == characteristicUUID) {
 					cHandle = c.handle;
 				}
